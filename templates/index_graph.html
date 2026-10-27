@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wordle Letter Counts and Patterns Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .data { border-collapse: collapse; width: 50%; }
+        .data th, .data td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .data th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Wordle Patterns and Counts as of {{last_date}}</h1>
+    <p>Working on more ways to explore. Please visit frequently to check for updates</p>
+    <a href="https://github.com/lalitha2019/wordle_web_project">Backend code for webscraping, parsing and preparing data</a>
+    <p></p>
+    <a href="https://github.com/lalitha2019/wordle_web_project_demo_part">Copy of code for previous working demo on PythonAnywhere</a>
+    <p></p>
+        <label for="year_select">Choose a year:</label>
+	        <select name="year_select" id="year_select" required>
+  		    <option value="" selected disabled>-- Select an option --</option>
+	        </select>
+        <label for="month_select">Choose a month:</label>
+	        <select name="month_select" id="month_select">
+  		    <option value="" selected disabled>-- Select an option --</option>
+	        </select>
+        <p></p>
+        
+        <button type="button" name="submit_selection" id="submit_selection" onclick="show_vals()">Show the graph for the current selection</button>
+        <button type="button" name="clear_selection" id="clear_selection" onclick="window.location.reload()">Clear selection and show counts for all time</button>
+   
+    <p></p>
+
+    <h1>Wordle letter counts</h1>
+    
+    <!-- Render the base64 string directly inside the image source -->
+    <div class="graph-container">
+        <img id="graph" src="data:image/png;base64,{{ plot_var }}" alt="Matplotlib Graph">
+    </div>
+
+    <script>
+     // 1. Define your data array
+    const year_vals = JSON.parse('{{years | tojson}}')
+    const month_vals = JSON.parse('{{months | tojson}}')
+    const letter_vals = JSON.parse('{{letters | tojson}}')
+    const year_select_element = document.getElementById("year_select");
+    const month_select_element = document.getElementById("month_select");   
+
+    function populate_options(select_element, options_list) {
+        // Clear existing dynamic options (keeping the placeholder index 0)
+	    select_element.length = 1; 
+
+        //loop through options_list
+        options_list.forEach(option_val => {
+ 		const option = document.createElement("option");
+        
+        // Assign value and text content
+ 		option.value = option_val
+		option.textContent = option_val;
+        
+        // Append the option to the dropdown list
+		select_element.appendChild(option);
+        }); 
+    }
+    populate_options(year_select_element,year_vals)
+    populate_options(month_select_element, month_vals)
+    
+    year_select_element.addEventListener("change",
+            function() {
+                const selected_year = year_select_element.value
+                if(selected_year == '2021') {
+                   populate_options(month_select_element, month_vals.slice(5,))  
+                } else {populate_options(month_select_element, month_vals)}
+            })
+
+    function show_vals() {
+        const button_element = document.getElementById("submit_selection")
+        const data_to_send = {'year': year_select_element.value,
+                                'month': month_select_element.value};
+        
+                fetch('/api/show_selected', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data_to_send)
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log('Success');
+                    document.getElementById('graph').src = 'data:image/png;base64,' + data.image;
+                })
+                .catch(error => console.error('Error sending data: ', error));
+            } 
+
+    </script>
+</body>
+</html>
